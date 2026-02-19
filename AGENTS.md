@@ -143,3 +143,7 @@ FastAPI 服务
     ├── ONNX 一致性
     └── hard_negatives/confusion_set 误判情况
 ```
+
+## 9. 项目路径
+- 代码编写目录：/Users/duyx/workspace/JSAI/e-intent-detect-model
+- 代码运行目录：/root/gpufree-data/e-intent-detect-model
