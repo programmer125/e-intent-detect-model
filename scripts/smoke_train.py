@@ -127,8 +127,8 @@ def main() -> int:
             max_length=args.max_length,
         )
 
-    train_ds = train_ds.map(tokenize_batch, batched=True)
-    val_ds = val_ds.map(tokenize_batch, batched=True)
+    train_ds = train_ds.map(tokenize_batch, batched=True, remove_columns=["text"])
+    val_ds = val_ds.map(tokenize_batch, batched=True, remove_columns=["text"])
 
     training_args = TrainingArguments(
         output_dir=str(args.output_dir),
@@ -143,7 +143,7 @@ def main() -> int:
         save_strategy="steps",
         fp16=torch.cuda.is_available(),
         report_to=[],
-        remove_unused_columns=False,
+        remove_unused_columns=True,
     )
 
     trainer = Trainer(
