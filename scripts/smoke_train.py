@@ -73,9 +73,18 @@ def compute_metrics(eval_pred):
 
 
 def write_json(path: Path, payload: Dict) -> None:
+    def _json_default(obj):
+        if isinstance(obj, Path):
+            return str(obj)
+        if isinstance(obj, (np.integer,)):
+            return int(obj)
+        if isinstance(obj, (np.floating,)):
+            return float(obj)
+        raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
+
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8") as f:
-        json.dump(payload, f, ensure_ascii=False, indent=2)
+        json.dump(payload, f, ensure_ascii=False, indent=2, default=_json_default)
 
 
 def main() -> int:
