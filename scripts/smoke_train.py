@@ -201,6 +201,7 @@ def main() -> int:
         test_report = classification_report(
             label_ids,
             pred_ids,
+            labels=list(range(len(id2label))),
             target_names=[id2label[i] for i in range(len(id2label))],
             output_dict=True,
             zero_division=0,
