@@ -16,7 +16,6 @@ MODEL_DIR = Path(os.getenv("MODEL_DIR", str(BASE_DIR / "outputs" / "smoke_model"
 ONNX_PATH = Path(os.getenv("ONNX_PATH", str(MODEL_DIR / "model.onnx")))
 INTENT_PATH = Path(os.getenv("INTENT_PATH", str(BASE_DIR / "intent" / "common.json")))
 MAX_LENGTH = int(os.getenv("MAX_LENGTH", "64"))
-OTHER_THRESHOLD = float(os.getenv("OTHER_THRESHOLD", "0.60"))
 HOST = os.getenv("HOST", "0.0.0.0")
 PORT = int(os.getenv("PORT", "8080"))
 
@@ -32,6 +31,8 @@ class PredictResponse(BaseModel):
     score: float
     is_other: bool
     model_version: str
+    threshold: float
+    topk: List[Dict[str, Any]]
 
 
 class ModelArtifacts:
@@ -40,7 +41,7 @@ class ModelArtifacts:
         self.onnx_path: Path = ONNX_PATH
         self.intent_path: Path = INTENT_PATH
         self.max_length: int = MAX_LENGTH
-        self.other_threshold: float = OTHER_THRESHOLD
+        self.other_threshold: float = 0.08
         self.model_version: str = os.getenv("MODEL_VERSION", self.model_dir.name)
         self.tokenizer = None
         self.session = None
@@ -66,6 +67,13 @@ class ModelArtifacts:
         if not raw_id2label:
             raise ValueError("id2label not found in model config.json")
         self.id2label = {int(k): v for k, v in raw_id2label.items()}
+        env_threshold = os.getenv("OTHER_THRESHOLD")
+        if env_threshold is not None:
+            self.other_threshold = float(env_threshold)
+        else:
+            # Auto-threshold for multi-class intent tasks to avoid over-triggering OTHER.
+            num_labels = max(len(self.id2label), 1)
+            self.other_threshold = round(max(0.03, min(0.12, 2.0 / num_labels)), 4)
 
         with self.intent_path.open("r", encoding="utf-8") as f:
             intent_data = json.load(f)
@@ -109,6 +117,17 @@ class ModelArtifacts:
         intent_id = self.id2label[pred_idx]
         is_other = score < self.other_threshold
 
+        topk_idx = np.argsort(probs)[::-1][:3]
+        topk: List[Dict[str, Any]] = []
+        for idx in topk_idx:
+            idx_int = int(idx)
+            topk.append(
+                {
+                    "intent_id": self.id2label.get(idx_int, str(idx_int)),
+                    "score": round(float(probs[idx_int]), 6),
+                }
+            )
+
         level1 = None
         level2 = None
         if not is_other:
@@ -125,6 +144,8 @@ class ModelArtifacts:
             "score": round(score, 6),
             "is_other": is_other,
             "model_version": self.model_version,
+            "threshold": self.other_threshold,
+            "topk": topk,
         }
 
 
