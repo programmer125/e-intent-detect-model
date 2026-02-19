@@ -65,20 +65,20 @@ e-intent-detect-model
 ```text
 执行流程
 ├── 1) 创建环境
-│   ├── conda env create -f environment.yml
+│   ├── conda env create -f /root/gpufree-data/e-intent-detect-model/environment.yml
 │   ├── conda activate intent-llm
-│   └── pip install -r requirements-cu118.txt
+│   └── pip install -r /root/gpufree-data/e-intent-detect-model/requirements-cu118.txt
 ├── 2) GPU 校验
-│   └── python scripts/verify_gpu.py
+│   └── python /root/gpufree-data/e-intent-detect-model/scripts/verify_gpu.py
 ├── 3) 训练冒烟
-│   └── python scripts/smoke_train.py --train_path ... --val_path ... --max_steps 100 --model_source modelscope --model_name damo/nlp_structbert_backbone_base_std
+│   └── python /root/gpufree-data/e-intent-detect-model/scripts/smoke_train.py --train_path /root/gpufree-data/e-intent-detect-model/data/intent_train_1k.train.jsonl --val_path /root/gpufree-data/e-intent-detect-model/data/intent_train_1k.val.jsonl --test_path /root/gpufree-data/e-intent-detect-model/data/intent_train_1k.test.jsonl --num_train_epochs 12 --model_source modelscope --model_name damo/nlp_structbert_backbone_base_std --output_dir /root/gpufree-data/e-intent-detect-model/outputs/model_v2
 ├── 4) 推理性能测试
-│   └── python scripts/benchmark_inference.py --model_dir outputs/smoke_model --input_path data/intent_train_1k.test.jsonl --num_samples 1000 --batch_size 1 --max_length 64
+│   └── python /root/gpufree-data/e-intent-detect-model/scripts/benchmark_inference.py --model_dir /root/gpufree-data/e-intent-detect-model/outputs/model_v2 --input_path /root/gpufree-data/e-intent-detect-model/data/intent_train_1k.test.jsonl --num_samples 1000 --batch_size 1 --max_length 64
 ├── 5) 导出与一致性验证
-│   ├── python scripts/export_onnx.py --model_dir outputs/smoke_model --onnx_path outputs/smoke_model/model.onnx --max_length 64
-│   └── python scripts/check_onnx_consistency.py --model_dir outputs/smoke_model --onnx_path outputs/smoke_model/model.onnx --input_path data/intent_train_1k.test.jsonl --num_samples 1000 --max_length 64
+│   ├── python /root/gpufree-data/e-intent-detect-model/scripts/export_onnx.py --model_dir /root/gpufree-data/e-intent-detect-model/outputs/model_v2 --onnx_path /root/gpufree-data/e-intent-detect-model/outputs/model_v2/model.onnx --max_length 64
+│   └── python /root/gpufree-data/e-intent-detect-model/scripts/check_onnx_consistency.py --model_dir /root/gpufree-data/e-intent-detect-model/outputs/model_v2 --onnx_path /root/gpufree-data/e-intent-detect-model/outputs/model_v2/model.onnx --input_path /root/gpufree-data/e-intent-detect-model/data/intent_train_1k.test.jsonl --num_samples 1000 --max_length 64
 └── 6) 启动服务
-    └── python app.py
+    └── python /root/gpufree-data/e-intent-detect-model/app.py
 ```
 
 ## 5. 在线服务说明（tree）
@@ -103,7 +103,7 @@ FastAPI 服务
 ├── ONNX_PATH        # 默认: ${MODEL_DIR}/model.onnx
 ├── INTENT_PATH      # 默认: intent/common.json
 ├── MAX_LENGTH       # 默认: 64
-├── OTHER_THRESHOLD  # 默认: 0.60
+├── OTHER_THRESHOLD  # 默认: 自动阈值（未设置环境变量时）
 ├── MODEL_VERSION    # 默认: 模型目录名
 ├── HOST             # 默认: 0.0.0.0
 └── PORT             # 默认: 8080
@@ -135,9 +135,9 @@ FastAPI 服务
 │   ├── ModelScope 可用路径
 │   └── 低延迟默认参数（batch_size=1, max_length<=64）
 ├── 升级依赖后必须回归
-│   ├── python scripts/verify_gpu.py
-│   ├── python scripts/benchmark_inference.py ...
-│   └── python scripts/check_onnx_consistency.py ...
+│   ├── python /root/gpufree-data/e-intent-detect-model/scripts/verify_gpu.py
+│   ├── python /root/gpufree-data/e-intent-detect-model/scripts/benchmark_inference.py ...
+│   └── python /root/gpufree-data/e-intent-detect-model/scripts/check_onnx_consistency.py ...
 └── 上线前至少验证
     ├── P95 延迟
     ├── ONNX 一致性
