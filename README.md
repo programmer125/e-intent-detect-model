@@ -29,7 +29,8 @@ python scripts/smoke_train.py \
   --train_path data/intent_train_1k.train.jsonl \
   --val_path data/intent_train_1k.val.jsonl \
   --max_steps 100 \
-  --model_name hfl/chinese-roberta-wwm-ext
+  --model_source modelscope \
+  --model_name damo/nlp_structbert_backbone_base_std
 ```
 
 ## 4) Inference benchmark (P50/P95/P99)
@@ -64,3 +65,4 @@ python scripts/check_onnx_consistency.py \
 - Target defaults: `batch_size=1`, `max_length<=64`.
 - Online serving should use a distilled small encoder model, not direct LLM decoding.
 - ONNX Runtime GPU is preferred for low-latency inference.
+- If your network cannot access HuggingFace, keep `--model_source modelscope`.

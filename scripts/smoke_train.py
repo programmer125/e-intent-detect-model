@@ -16,6 +16,21 @@ from transformers import (
 )
 
 
+def resolve_model_path(model_name: str, model_source: str, cache_dir: Path) -> str:
+    if model_source == "huggingface":
+        return model_name
+    if model_source == "modelscope":
+        try:
+            from modelscope.hub.snapshot_download import snapshot_download
+        except ImportError as exc:
+            raise ImportError(
+                "ModelScope is not installed. Run: pip install modelscope==1.18.1"
+            ) from exc
+        local_dir = snapshot_download(model_id=model_name, cache_dir=str(cache_dir))
+        return local_dir
+    raise ValueError(f"Unsupported model_source: {model_source}")
+
+
 def read_jsonl(path: Path) -> List[Dict]:
     rows = []
     with path.open("r", encoding="utf-8") as f:
@@ -60,7 +75,18 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--train_path", type=Path, required=True)
     parser.add_argument("--val_path", type=Path, required=True)
-    parser.add_argument("--model_name", type=str, default="hfl/chinese-roberta-wwm-ext")
+    parser.add_argument(
+        "--model_name",
+        type=str,
+        default="damo/nlp_structbert_backbone_base_std",
+    )
+    parser.add_argument(
+        "--model_source",
+        type=str,
+        choices=["huggingface", "modelscope"],
+        default="modelscope",
+    )
+    parser.add_argument("--model_cache_dir", type=Path, default=Path(".cache/models"))
     parser.add_argument("--output_dir", type=Path, default=Path("outputs/smoke_model"))
     parser.add_argument("--max_steps", type=int, default=100)
     parser.add_argument("--per_device_batch_size", type=int, default=16)
@@ -77,9 +103,15 @@ def main() -> int:
     label2id = {label: idx for idx, label in enumerate(labels)}
     id2label = {idx: label for label, idx in label2id.items()}
 
-    tokenizer = AutoTokenizer.from_pretrained(args.model_name)
+    model_path = resolve_model_path(
+        model_name=args.model_name,
+        model_source=args.model_source,
+        cache_dir=args.model_cache_dir,
+    )
+
+    tokenizer = AutoTokenizer.from_pretrained(model_path)
     model = AutoModelForSequenceClassification.from_pretrained(
-        args.model_name,
+        model_path,
         num_labels=len(labels),
         label2id=label2id,
         id2label=id2label,
