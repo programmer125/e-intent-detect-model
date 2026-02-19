@@ -4,7 +4,7 @@ torchvision==0.19.1
 torchaudio==2.4.1
 
 --extra-index-url https://pypi.org/simple
-transformers==4.46.3
+transformers==4.44.2
 datasets==2.21.0
 accelerate==0.34.2
 peft==0.12.0
