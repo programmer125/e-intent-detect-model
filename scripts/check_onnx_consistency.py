@@ -37,12 +37,24 @@ def main() -> int:
     tokenizer = AutoTokenizer.from_pretrained(args.model_dir)
     torch_model = AutoModelForSequenceClassification.from_pretrained(args.model_dir).eval()
 
-    providers = (
+    requested_providers = (
         ["CUDAExecutionProvider", "CPUExecutionProvider"]
         if torch.cuda.is_available()
         else ["CPUExecutionProvider"]
     )
-    session = ort.InferenceSession(str(args.onnx_path), providers=providers)
+    try:
+        session = ort.InferenceSession(str(args.onnx_path), providers=requested_providers)
+    except Exception as exc:
+        print(
+            json.dumps(
+                {
+                    "warning": "Failed to initialize CUDAExecutionProvider, fallback to CPUExecutionProvider.",
+                    "error": str(exc),
+                },
+                ensure_ascii=False,
+            )
+        )
+        session = ort.InferenceSession(str(args.onnx_path), providers=["CPUExecutionProvider"])
 
     texts = read_texts(args.input_path, args.num_samples)
     if not texts:
