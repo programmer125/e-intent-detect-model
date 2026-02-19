@@ -144,6 +144,7 @@ def main() -> int:
         fp16=torch.cuda.is_available(),
         report_to=[],
         remove_unused_columns=True,
+        save_safetensors=False,
     )
 
     trainer = Trainer(
